@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0D0221">
-<title>NEON DEAD (Copy)</title>
+<title>NEON DEAD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Monoton&family=Oswald:wght@400;500;600&family=Rubik+Mono+One&family=VT323&display=swap" rel="stylesheet">
@@ -669,7 +669,7 @@ function killEnemy(e){
     CH.push({ x:e.x, y:e.y }); dropGem(e.x + 10, e.y, 25);
     if (S.boss === e){ S.boss = null; MK.push({ x:e.x + 34, y:e.y + 8 }); if (Math.random() < .1) dropTape(e.x, e.y - 36); banner('Міні-боса переможено', 'він залишив аптечку'); }
   } else dropGem(e.x, e.y, t.xp);
-  if (t.explode){ HZ.push({ x:e.x, y:e.y + 4, r:30, life:3, max:3 }); sfx('splat'); }
+  if (t.explode){ HZ.push({ x:e.x, y:e.y + 4, r:30, life:4, max:4 }); sfx('splat'); }
   sfx('kill');
 }
 function dropTape(x, y){ if (TAPES.some(t => !META.unl.tapes.includes(t.id))) TPK.push({ x, y }); }
@@ -1016,7 +1016,15 @@ function update(dt){
   for (const h of HZ){
     h.life -= dt;
     const dx = P.x - h.x, dy = (P.y - h.y)*1.8;
-    if (dx*dx + dy*dy < h.r*h.r) { P.hp -= 9*dt; if (P.hp <= 0){ P.hp = 0; die(); } }
+    if (dx*dx + dy*dy < h.r*h.r) {
+      P.hp -= 9*dt;
+      if (!h.fire){
+        if (Math.random() < .3 && PT.length < 700) PT.push({ x:P.x + rand(-10, 10), y:P.y + rand(-4, 8), vx:rand(-8, 8), vy:rand(-50, -25), life:.5, max:.5, c:COL.toxic, s:rand(2, 3.5) });
+        S.poisonT = (S.poisonT || 0) - dt;
+        if (S.poisonT <= 0){ S.poisonT = .55; DN.push({ x:P.x + rand(-6, 6), y:P.y - 44, v:'☠ -5', life:.6, c:COL.toxic }); sfx('splat'); }
+      }
+      if (P.hp <= 0){ P.hp = 0; die(); }
+    }
   }
   HZ = HZ.filter(h => h.life > 0);
   if (S.mode === 'play' && S.pending > 0) openLevelUp();
@@ -1755,6 +1763,26 @@ function render(){
     ctx.fillStyle = h.fire ? `rgba(255,108,17,${.4*Math.min(1, h.life)*(.8 + Math.sin(S.t*20 + h.x)*.2)})` : `rgba(57,255,20,${.22*Math.min(1, h.life)})`; ell(h.x, h.y, h.r, h.r*.55); ctx.fill();
     if (h.fire && Math.random() < .15 && PT.length < 700) PT.push({ x:h.x + rand(-h.r, h.r)*.7, y:h.y, vx:rand(-10, 10), vy:rand(-60, -30), life:.4, max:.4, c:Math.random() < .5 ? COL.orange : COL.gold, s:rand(2, 3.5) });
     ctx.globalCompositeOperation = 'source-over';
+    if (!h.fire){
+      const fade = Math.min(1, h.life), pulse = 1 + Math.sin(S.t*4 + h.x)*.06, rx = h.r*pulse, ry = h.r*.55*pulse;
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = 'rgba(18,58,12,.6)'; ell(h.x, h.y, rx, ry); ctx.fill();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(57,255,20,${.12 + Math.sin(S.t*6 + h.y)*.05})`; ell(h.x, h.y, rx*.75, ry*.75); ctx.fill();
+      ctx.strokeStyle = 'rgba(57,255,20,.75)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -S.t*14;
+      ell(h.x, h.y, rx, ry); ctx.stroke(); ctx.setLineDash([]);
+      for (let k = 0; k < 6; k++){
+        const ph = S.t*1.4 + k*.37 + h.x*.013, cyc = Math.floor(ph), f = ph - cyc;
+        const hh = h2(cyc*7 + k, Math.floor(h.x) + k*13), ang = hh*TAU, dist = Math.sqrt(h2(cyc + k*3, Math.floor(h.y)))*.7;
+        const bx = h.x + Math.cos(ang)*rx*dist, by = h.y + Math.sin(ang)*ry*dist, br = 1 + f*4.5;
+        ctx.strokeStyle = `rgba(150,255,110,${(1 - f)*.9})`; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(bx, by - f*3, br, 0, TAU); ctx.stroke();
+        if (f > .85){ ctx.fillStyle = `rgba(150,255,110,${(1 - f)*4})`; ctx.fillRect(bx - 4, by - 6, 2, 2); ctx.fillRect(bx + 3, by - 7, 2, 2); }
+      }
+      ctx.fillStyle = `rgba(57,255,20,${.55 + Math.sin(S.t*5 + h.x)*.25})`; ctx.font = '400 15px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillText('☠', h.x, h.y + 5);
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+      if (Math.random() < .12 && PT.length < 700) PT.push({ x:h.x + rand(-rx, rx)*.6, y:h.y + rand(-ry, ry)*.5, vx:rand(-6, 6), vy:rand(-30, -14), life:.9, max:.9, c:'#6CFF3A', s:rand(1.5, 3) });
+    }
   }
   for (const g of G){
     const c = GEM[g.val] || GEM[1], s = g.val === 25 ? 6 : g.val === 5 ? 5 : 4;
@@ -1838,7 +1866,7 @@ function render(){
     const a = Math.min(1, n.life/.25);
     ctx.globalAlpha = a; ctx.font = `400 ${n.big ? 19 : 14}px VT323, monospace`;
     ctx.lineWidth = 3; ctx.strokeStyle = '#0A0517'; ctx.strokeText(n.v, n.x, n.y);
-    ctx.fillStyle = n.big ? COL.gold : '#FFFFFF'; ctx.fillText(n.v, n.x, n.y);
+    ctx.fillStyle = n.c || (n.big ? COL.gold : '#FFFFFF'); ctx.fillText(n.v, n.x, n.y);
   }
   ctx.globalAlpha = 1;
   for (const p of PR){
