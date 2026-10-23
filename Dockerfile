@@ -1,5 +1,5 @@
 FROM nginx:alpine
 
-COPY index.html /usr/share/nginx/html/index.html
+COPY index.html manifest.json icon-180.png icon-512.png /usr/share/nginx/html/
 
 EXPOSE 80

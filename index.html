@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0D0221">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NEON DEAD">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
 <title>NEON DEAD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -161,6 +167,18 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .cass.sel .g::after{content:" ▶ грає";color:var(--c)}
 .cass .g{padding-top:6px}
 .earn{font:400 26px/1 var(--f-vhs);color:var(--gold);margin:2px 0 6px}
+.ver{position:absolute;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);font:400 18px/1 var(--f-vhs);color:rgba(244,236,255,.55)}
+.links{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:4px}
+.links .nowtape{margin:0}
+textarea.code{display:block;width:100%;min-height:92px;margin:8px 0;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0A0119;color:var(--text);font:400 16px/1.25 var(--f-vhs);word-break:break-all;-webkit-user-select:text;user-select:text;resize:vertical}
+.mult{display:grid;grid-template-columns:1fr auto;gap:6px 12px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin:0 0 12px;font:400 15px/1.3 var(--f-ui)}
+.mult span:nth-child(even){font:400 19px/1.1 var(--f-vhs);color:var(--cyan);text-align:right}
+.mult .warn{grid-column:1/-1;color:var(--gold);font:400 17px/1.2 var(--f-vhs)}
+.lab{display:grid;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:left}
+.lab label{display:flex;justify-content:space-between;font:500 16px/1.2 var(--f-ui)}
+.lab label b{font:400 20px/1 var(--f-vhs);color:var(--cyan);font-weight:400}
+.lab input{width:100%;accent-color:var(--mag);height:28px}
+.lab small{font:400 13px/1.3 var(--f-ui);color:var(--text-dim)}
 .newunl{font:400 19px/1.35 var(--f-vhs);color:var(--cyan);margin:0 0 6px}
 
 </style>
@@ -197,10 +215,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
       </div>
       <div class="coins" id="coins">0 монет</div>
       <button class="nowtape" id="nowtape"></button>
+      <div class="links"><button class="nowtape" id="b-save">💾 Код прогресу</button><button class="nowtape" id="b-lab">⚗ Лабораторія балансу</button></div>
       <p class="hint">Тягни пальцем будь-де по екрану, щоб рухатися, або грай клавішами WASD. Зброя стріляє сама.</p>
       <div class="best" id="best"></div>
     </div>
     <div class="vhs-stamp">PM 11:58<br>OCT 31 1985</div>
+    <div class="ver" id="ver"></div>
   </section>
 
   <section class="screen dim" id="s-shop">
@@ -230,6 +250,29 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
     </div>
   </section>
 
+  <section class="screen dim" id="s-save">
+    <div class="wrap">
+      <h2 class="h2">Код прогресу</h2>
+      <p class="sub">Переносить монети, покращення, картки й досягнення між пристроями та адресами гри</p>
+      <textarea class="code" id="save-out" readonly aria-label="Твій код прогресу"></textarea>
+      <button class="btn" id="b-copy">Скопіювати код</button>
+      <textarea class="code" id="save-in" placeholder="Встав сюди код прогресу" aria-label="Код прогресу для відновлення"></textarea>
+      <button class="btn alt" id="b-paste">Відновити з коду</button>
+      <p class="hint" id="save-msg"></p>
+      <button class="btn alt" data-back>Назад до прокату</button>
+    </div>
+  </section>
+
+  <section class="screen dim" id="s-lab">
+    <div class="wrap">
+      <h2 class="h2">Лабораторія балансу</h2>
+      <p class="sub">Поки множники змінені, монети й досягнення не нараховуються</p>
+      <div class="list" id="lab-list"></div>
+      <button class="btn alt" id="b-lab-reset">Скинути все до 100%</button>
+      <button class="btn alt" id="b-lab-back">Назад</button>
+    </div>
+  </section>
+
   <section class="screen dim" id="s-level">
     <div class="wrap">
       <h2 class="h2">Новий рівень</h2>
@@ -254,8 +297,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
     <div class="wrap">
       <h2 class="h2">Пауза</h2>
       <p class="sub" id="pause-sub">Starlight Mall</p>
+      <div class="mult" id="pause-mult"></div>
       <button class="btn" id="b-resume">Продовжити</button>
       <button class="btn alt" id="b-sound">Звук: увімкнено</button>
+      <button class="btn alt" id="b-lab2">⚗ Лабораторія балансу</button>
       <button class="btn alt" id="b-menu">Вийти в меню</button>
     </div>
   </section>
@@ -305,6 +350,32 @@ const TAU = Math.PI * 2;
 const COL = { mag:'#FF2A6D', cyan:'#05D9E8', purple:'#2B0F54', orange:'#FF6C11', toxic:'#39FF14', gold:'#FFC23A', ink:'#0D0221' };
 const GEM = { 1:'#3FA9FF', 5:'#FF4FD8', 25:'#FFC23A' };
 
+/* ---------- CFG: all balance numbers in one place ---------- */
+const VERSION = 'v0.9.0';
+const CFG = {
+  player:{ hp:100, speed:150, rewindKills:120, hpPerUpgrade:10 },
+  spawn:{ base:1.0, perMin:.8, perMin2:.02, capBase:100, capPerMin:12, capMax:260, eliteFirst:150, eliteEvery:75 },
+  enemyHpPerSec:1/240,
+  xp:{ full:{ lin:5, k:1.5, pow:1.5 }, quick:{ lin:6, k:.55, pow:2.1 }, quickMul:2.2 },
+  boss:{
+    every:120, seq:['queen', 'tom', 'manager', 'queen', 'tom', 'manager', 'tom'],
+    quickEvery:240, quickSeq:['queen', 'manager', 'tom'],
+    full:{ hp:{ queen:500, tom:560, manager:800 }, k:.58, pow:1.7 },
+    quick:{ hp:{ queen:450, tom:560, manager:750 }, k:.62, pow:1.35, mul:.5 },
+    catchUpDist:230, catchUpMul:1.9
+  },
+  tom:{ laserDmg:18, laserEvery:3.8, laserEveryRage:2.8, reviveHp:.35, reviveSpeed:1.15 },
+  economy:{ killsPerCoin:12, coinsPerMin:4, mini:20, boss:50, tom:80, win:80, upgradeCostMul:3, upgradeCostGrowth:1.6 },
+  drops:{ cardChance:.1, medkitHeal:.5 },
+  hazard:{ poisonDps:9, poisonLife:4 }
+};
+/* Balance lab multipliers (saved separately from the profile) */
+const LAB_KEY = 'neondead-lab-v1', LAB_DEF = { ehp:1, spawn:1, bhp:1, xp:1 };
+let LAB = Object.assign({}, LAB_DEF);
+try { LAB = Object.assign({}, LAB_DEF, JSON.parse(localStorage.getItem(LAB_KEY) || '{}')); } catch (e) {}
+const labActive = () => Object.keys(LAB_DEF).some(k => Math.abs(LAB[k] - 1) > .001);
+function saveLab(){ try { localStorage.setItem(LAB_KEY, JSON.stringify(LAB)); } catch (e) {} }
+
 /* ---------- Data ---------- */
 const WEAPONS = {
   boombox:{name:'Бумбокс',icon:'📻',desc:'Звукова хвиля б’є всіх навколо',evo:'amp',evoName:'Стіна звуку',evoDesc:'Постійна звукова аура, що відкидає орду.'},
@@ -335,17 +406,17 @@ const ET = {
   boss:{hp:5200,spd:60,r:40,dmg:28,xp:0},
   tom:{hp:7000,spd:62,r:42,dmg:24,xp:0}
 };
-const REW_MAX = 120;
+const REW_MAX = CFG.player.rewindKills;
 /* Boss schedule: every BOSS_EVERY seconds of film time, HP = base × K × n^POW (n = boss number) */
-const BOSS_EVERY = 120;
-const BOSS_SEQ = ['queen', 'tom', 'manager', 'queen', 'tom', 'manager', 'tom'];
+const BOSS_EVERY = CFG.boss.every;
+const BOSS_SEQ = CFG.boss.seq;
 /* Quick show (5 min): fewer bosses, faster leveling */
-const QUICK_BOSS_EVERY = 240, BOSS_SEQ_QUICK = ['queen', 'manager', 'tom'];
-const QUICK_XP = 2.2, QUICK_BOSS_HP = .5;
+const QUICK_BOSS_EVERY = CFG.boss.quickEvery, BOSS_SEQ_QUICK = CFG.boss.quickSeq;
+const QUICK_XP = CFG.xp.quickMul, QUICK_BOSS_HP = CFG.boss.quick.mul;
 /* Full session boss HP: base × .58 × n^1.7 */
-const BOSS_HP_FULL = { queen:500, tom:560, manager:800 }, FULL_GROW_K = .58, FULL_GROW_POW = 1.7;
-const BOSS_HP = { queen:450, tom:560, manager:750 };
-const BOSS_GROW_K = .62, BOSS_GROW_POW = 1.35;
+const BOSS_HP_FULL = CFG.boss.full.hp, FULL_GROW_K = CFG.boss.full.k, FULL_GROW_POW = CFG.boss.full.pow;
+const BOSS_HP = CFG.boss.quick.hp;
+const BOSS_GROW_K = CFG.boss.quick.k, BOSS_GROW_POW = CFG.boss.quick.pow;
 const BOSS_LINE = { queen:'лишає слід палаючого лаку', tom:'прибув з майбутнього', manager:'вийшов на нічну зміну' };
 
 /* ---------- Sprites (art from the sprite test) ---------- */
@@ -396,7 +467,7 @@ const UPG = {
   armor:{icon:'🧥', name:'Товста джинсовка', desc:'–6% шкоди по тобі', max:5, base:80},
   reroll:{icon:'⏪', name:'Зайва перемотка', desc:'+1 перемотка вибору', max:3, base:120}
 };
-const upCost = (k, l) => Math.round(UPG[k].base*3*Math.pow(1.6, l));
+const upCost = (k, l) => Math.round(UPG[k].base*CFG.economy.upgradeCostMul*Math.pow(CFG.economy.upgradeCostGrowth, l));
 const TAPES = [
   {id:'mullet', artist:'Neon Mullet', album:'Rewind Tonight', genre:'синт-поп', bpm:104, prog:[45, 41, 48, 43], arp:[0, 7, 12, 15, 19, 15, 12, 7], wave:'sawtooth', c:'#FF2A6D'},
   {id:'rewinders', artist:'The Rewinders', album:'Static Hearts', genre:'нова хвиля', bpm:126, prog:[40, 43, 45, 38], arp:[0, 12, 7, 12, 3, 12, 7, 12], wave:'square', c:'#05D9E8'},
@@ -413,15 +484,42 @@ const TAPES = [
 ];
 let META = null;
 function freshRun(){ return { kills:0, aero:0, punk:0, elites:0, evos:0, bosses:0, minis:0, wins:0, toms:0, time:0 }; }
-function loadMeta(){
-  let m = null;
-  try { m = JSON.parse(localStorage.getItem('neondead-save') || 'null'); } catch (e) {}
-  m = m || {};
-  META = { coins:m.coins || 0, up:m.up || {}, unl:Object.assign({ w:[], p:[], tapes:['mullet'] }, m.unl || {}), ach:m.ach || {}, st:m.st || {}, tape:m.tape || 'mullet' };
-  if (!META.unl.tapes.includes('mullet')) META.unl.tapes.push('mullet');
-  try { const b = JSON.parse(localStorage.getItem('neondead-best') || '{}'); if (b.kills && !META.st.bestKills) META.st.bestKills = b.kills; } catch (e) {}
+/* Save format: key carries the game and version, the profile carries a schema number */
+const SAVE_KEY = 'neondead-profile-v1', LEGACY_KEY = 'neondead-save', SAVE_SCHEMA = 2;
+const PROFILE_DEF = () => ({ schema:SAVE_SCHEMA, coins:0, up:{}, unl:{ w:[], p:[], tapes:['mullet'] }, ach:{}, st:{}, tape:'mullet' });
+function migrate(m){
+  m = m && typeof m === 'object' ? m : {};
+  if (!m.schema){ /* schema 1 (legacy 'neondead-save', no schema field): same fields, arrays may be missing */ m.schema = 1; }
+  if (m.schema < 2){ /* 1 -> 2: unl gets all three arrays, 'mullet' is always owned */ m.unl = Object.assign({ w:[], p:[], tapes:[] }, m.unl || {}); m.schema = 2; }
+  return m;
 }
-function saveMeta(){ try { localStorage.setItem('neondead-save', JSON.stringify(META)); } catch (e) {} }
+function normalize(raw){
+  const d = PROFILE_DEF(), m = migrate(raw);
+  const out = Object.assign(d, m, { up:Object.assign({}, m.up), ach:Object.assign({}, m.ach), st:Object.assign({}, m.st), unl:Object.assign(d.unl, m.unl) });
+  for (const k of ['w', 'p', 'tapes']) if (!Array.isArray(out.unl[k])) out.unl[k] = [];
+  if (!out.unl.tapes.includes('mullet')) out.unl.tapes.push('mullet');
+  if (typeof out.coins !== 'number' || !isFinite(out.coins)) out.coins = 0;
+  out.schema = SAVE_SCHEMA;
+  return out;
+}
+function loadMeta(){
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) {}
+  if (!raw){ try { raw = JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null'); } catch (e) {} }
+  META = normalize(raw);
+  try { const b = JSON.parse(localStorage.getItem('neondead-best') || '{}'); if (b.kills && !META.st.bestKills) META.st.bestKills = b.kills; } catch (e) {}
+  saveMeta();
+}
+function saveMeta(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(META)); } catch (e) {} }
+function hash32(str){ let h = 0x811c9dc5; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16).padStart(8, '0'); }
+function exportCode(){ const j = JSON.stringify(META); return `ND${SAVE_SCHEMA}.${btoa(unescape(encodeURIComponent(j)))}.${hash32(j)}`; }
+function importCode(code){
+  const m = String(code).replace(/\s+/g, '').match(/^ND(\d+)\.([A-Za-z0-9+/=]+)\.([0-9a-f]{8})$/);
+  if (!m) throw new Error('format');
+  const j = decodeURIComponent(escape(atob(m[2])));
+  if (hash32(j) !== m[3]) throw new Error('checksum');
+  META = normalize(JSON.parse(j)); saveMeta();
+}
 const unlockedW = id => BASE_W.includes(id) || META.unl.w.includes(id);
 const unlockedP = id => BASE_P.includes(id) || META.unl.p.includes(id);
 const curTape = () => TAPES.find(t => t.id === META.tape) || TAPES[0];
@@ -457,6 +555,7 @@ function rewardText(a){
   return r.join(', ');
 }
 function checkAch(){
+  if (labActive()) return;
   for (const a of ACH){
     if (META.ach[a.id]) continue;
     const [cur, target] = a.prog();
@@ -475,7 +574,8 @@ function checkAch(){
 function commitRun(won){
   const R = S.run; if (won) R.wins++;
   checkAch();
-  const c = Math.floor(R.kills/12 + R.time/60*4) + R.minis*20 + R.bosses*50 + R.toms*80 + (won ? 80 : 0);
+  const E$ = CFG.economy;
+  const c = labActive() ? 0 : Math.floor(R.kills/E$.killsPerCoin + R.time/60*E$.coinsPerMin) + R.minis*E$.mini + R.bosses*E$.boss + R.toms*E$.tom + (won ? E$.win : 0);
   META.coins += c; S.coinsRun = (S.coinsRun || 0) + c;
   for (const k of ['kills', 'aero', 'punk', 'elites', 'evos', 'bosses', 'minis', 'wins', 'toms']) META.st[k] = (META.st[k] || 0) + R[k];
   if (!S.counted){ META.st.runs = (META.st.runs || 0) + 1; S.counted = true; }
@@ -554,9 +654,9 @@ function stats(){
 }
 
 function newGame(pace){
-  S = { mode:'play', t:0, dir:0, pace, kills:0, spawnAcc:0, nextElite:150, mini:false, bossSpawned:false, boss:null, pending:0, shake:0, rew:0, bannerT:0, run:freshRun(), unl:[], coinsRun:0, counted:false, achT:1 };
-  P = { x:0, y:0, r:12, hp:100, maxHp:100, speed:150, face:1, dx:1, dy:0, inv:0, level:1, xp:0, xpNext:5, weapons:[{id:'boombox', lvl:1, t:.4}], pass:{}, rewind:0, revived:false, rerolls:1, walk:0, moving:false };
-  P.maxHp = P.hp = 100 + 10*(META.up.hp || 0); P.rerolls = 1 + (META.up.reroll || 0);
+  S = { mode:'play', t:0, dir:0, pace, kills:0, spawnAcc:0, nextElite:CFG.spawn.eliteFirst, mini:false, bossSpawned:false, boss:null, pending:0, shake:0, rew:0, bannerT:0, run:freshRun(), unl:[], coinsRun:0, counted:false, achT:1 };
+  P = { x:0, y:0, r:12, hp:CFG.player.hp, maxHp:CFG.player.hp, speed:CFG.player.speed, face:1, dx:1, dy:0, inv:0, level:1, xp:0, xpNext:5, weapons:[{id:'boombox', lvl:1, t:.4}], pass:{}, rewind:0, revived:false, rerolls:1, walk:0, moving:false };
+  P.maxHp = P.hp = CFG.player.hp + CFG.player.hpPerUpgrade*(META.up.hp || 0); P.rerolls = 1 + (META.up.reroll || 0);
   ST = stats();
   E = []; G = []; CH = []; PR = []; FX = []; PT = []; HZ = []; MK = []; DN = []; EP = []; TPK = [];
   showScreen(null);
@@ -570,8 +670,8 @@ function newGame(pace){
 
 /* ---------- Helpers ---------- */
 function xpNeeded(L){
-  if (S.pace > 1) return Math.floor(5 + (L-1)*6 + Math.pow(L-1, 2.1)*.55);
-  return Math.floor(5 + (L-1)*5 + Math.pow(L-1, 1.5)*1.5);
+  const c = S.pace > 1 ? CFG.xp.quick : CFG.xp.full;
+  return Math.floor(5 + (L-1)*c.lin + Math.pow(L-1, c.pow)*c.k);
 }
 function viewHalf(){ return { x:W/2/Z, y:H/2/Z }; }
 function spawnDist(){ const v = viewHalf(); return Math.hypot(v.x, v.y) + 40; }
@@ -604,7 +704,7 @@ function nearest(x, y, r, excl){
 function spawnEnemy(type, opts){
   opts = opts || {};
   const t = ET[type], a = Math.random()*TAU, d = spawnDist();
-  const hpMul = 1 + S.dir/240;
+  const hpMul = (1 + S.dir*CFG.enemyHpPerSec)*LAB.ehp;
   const e = { type, x:P.x + Math.cos(a)*d, y:P.y + Math.sin(a)*d, r:t.r, hp:t.hp*hpMul, spd:t.spd*rand(.9, 1.1), dmg:t.dmg,
               kx:0, ky:0, flash:0, face:1, ph:Math.random()*6, hc:{}, elite:false, boss:false };
   Object.assign(e, opts);
@@ -625,10 +725,11 @@ function chooseType(m){
 }
 function director(dt){
   const m = S.dir/60;
-  S.spawnAcc += dt * (1.0 + m*0.8 + m*m*0.02);
-  const cap = Math.min(260, 100 + m*12);
+  const sp$ = CFG.spawn;
+  S.spawnAcc += dt*(sp$.base + m*sp$.perMin + m*m*sp$.perMin2)*LAB.spawn;
+  const cap = Math.min(sp$.capMax, (sp$.capBase + m*sp$.capPerMin)*Math.min(1.6, LAB.spawn));
   while (S.spawnAcc >= 1){ S.spawnAcc -= 1; if (E.length < cap) spawnEnemy(chooseType(m)); }
-  if (S.dir >= S.nextElite){ S.nextElite += 75; spawnEnemy(chooseType(m), { elite:true }); }
+  if (S.dir >= S.nextElite){ S.nextElite += CFG.spawn.eliteEvery; spawnEnemy(chooseType(m), { elite:true }); }
   const every = S.pace > 1 ? QUICK_BOSS_EVERY : BOSS_EVERY, seq = S.pace > 1 ? BOSS_SEQ_QUICK : BOSS_SEQ;
   if (S.dir >= (S.nextBoss || every) && S.dir < 890){
     S.bossN = (S.bossN || 0) + 1; S.nextBoss = (S.nextBoss || every) + every;
@@ -638,6 +739,7 @@ function director(dt){
     else if (kind === 'tom') b = spawnEnemy('tom', { boss:true, tom:true, name:'Олег Томінатор', dashT:6, sumT:9, dashing:0, cartT:9999, laserT:3, lives:1 });
     else b = spawnEnemy('boss', { boss:true, name:'Менеджер молу', dashT:4, sumT:6, dashing:0, cartT:3 });
     b.hp = b.maxHp = S.pace > 1 ? BOSS_HP[kind]*BOSS_GROW_K*Math.pow(S.dir/BOSS_EVERY, BOSS_GROW_POW)*QUICK_BOSS_HP : BOSS_HP_FULL[kind]*FULL_GROW_K*Math.pow(S.bossN, FULL_GROW_POW);
+    b.hp = b.maxHp = b.hp*LAB.bhp;
     S.boss = b;
     banner(`Бос ${S.bossN}: ${b.name}`, BOSS_LINE[kind]); sfx('bossin');
   }
@@ -659,7 +761,7 @@ function dropGem(x, y, v){
 }
 function killEnemy(e){
   if (e.tom && e.lives > 0){
-    e.lives--; e.hp = e.maxHp*.35; e.spd *= 1.15; e.flash = .3; e.aim = null;
+    e.lives--; e.hp = e.maxHp*CFG.tom.reviveHp; e.spd *= CFG.tom.reviveSpeed; e.flash = .3; e.aim = null;
     banner('Я ще повернуся…', 'Олег Томінатор перезавантажується');
     ring(e.x, e.y, 10, 160, .6, COL.cyan, false); burst(e.x, e.y - 30, COL.cyan, 30); S.shake = .3; sfx('bossin');
     return;
@@ -674,12 +776,12 @@ function killEnemy(e){
     CH.push({ x:e.x, y:e.y }); MK.push({ x:e.x + 36, y:e.y + 10 });
     for (let i = 0; i < 12; i++) dropGem(e.x + rand(-40, 40), e.y + rand(-40, 40), 25);
     banner(e.tom ? 'Томінатора знищено' : 'Менеджера звільнено', e.tom ? 'Hasta la vista, Олеже' : 'тримайся до титрів'); if (S.boss === e) S.boss = null; sfx('evo');
-    if (Math.random() < .1) dropTape(e.x, e.y - 40);
+    if (Math.random() < CFG.drops.cardChance) dropTape(e.x, e.y - 40);
   } else if (e.elite){
     CH.push({ x:e.x, y:e.y }); dropGem(e.x + 10, e.y, 25);
-    if (e.queen){ if (S.boss === e) S.boss = null; MK.push({ x:e.x + 34, y:e.y + 8 }); if (Math.random() < .1) dropTape(e.x, e.y - 36); banner('Королеву переможено', 'вона залишила аптечку'); }
+    if (e.queen){ if (S.boss === e) S.boss = null; MK.push({ x:e.x + 34, y:e.y + 8 }); if (Math.random() < CFG.drops.cardChance) dropTape(e.x, e.y - 36); banner('Королеву переможено', 'вона залишила аптечку'); }
   } else dropGem(e.x, e.y, t.xp);
-  if (t.explode){ HZ.push({ x:e.x, y:e.y + 4, r:30, life:4, max:4 }); sfx('splat'); }
+  if (t.explode){ HZ.push({ x:e.x, y:e.y + 4, r:30, life:CFG.hazard.poisonLife, max:CFG.hazard.poisonLife }); sfx('splat'); }
   sfx('kill');
 }
 function dropTape(x, y){ if (TAPES.some(t => !META.unl.tapes.includes(t.id))) TPK.push({ x, y }); }
@@ -927,7 +1029,7 @@ function update(dt){
       e.x = P.x + Math.cos(a)*sd; e.y = P.y + Math.sin(a)*sd; continue;
     }
     let sp = e.spd;
-    if (e.name && d > 230) sp *= 1.9;
+    if (e.name && d > CFG.boss.catchUpDist) sp *= CFG.boss.catchUpMul;
     if (e.boss){
       e.dashT -= dt; e.sumT -= dt;
       if (e.dashT <= 0){ e.dashT = 5; e.dashing = .9; S.shake = Math.max(S.shake, .15); }
@@ -951,9 +1053,9 @@ function update(dt){
         if (e.aim.t <= 0){
           const x1 = e.x, y1 = e.y - e.r*2, a = Math.atan2(e.aim.y - y1, e.aim.x - x1), x2 = x1 + Math.cos(a)*700, y2 = y1 + Math.sin(a)*700;
           const vx2 = x2 - x1, vy2 = y2 - y1, tt = clamp(((P.x - x1)*vx2 + (P.y - y1)*vy2)/(vx2*vx2 + vy2*vy2), 0, 1);
-          if (Math.hypot(P.x - (x1 + vx2*tt), P.y - (y1 + vy2*tt)) < P.r + 10) hurtPlayer(18);
+          if (Math.hypot(P.x - (x1 + vx2*tt), P.y - (y1 + vy2*tt)) < P.r + 10) hurtPlayer(CFG.tom.laserDmg);
           FX.push({ k:'laser', x1, y1, x2, y2, life:.28, max:.28 });
-          e.aim = null; e.laserT = e.lives > 0 ? 3.8 : 2.8; sfx('zap'); S.shake = Math.max(S.shake, .12);
+          e.aim = null; e.laserT = e.lives > 0 ? CFG.tom.laserEvery : CFG.tom.laserEveryRage; sfx('zap'); S.shake = Math.max(S.shake, .12);
         }
       }
     }
@@ -1004,7 +1106,7 @@ function update(dt){
   for (const m of MK){
     const dx = P.x - m.x, dy = P.y - m.y;
     if (dx*dx + dy*dy < 30*30){
-      m.dead = true; P.hp = Math.min(P.maxHp, P.hp + P.maxHp*.5);
+      m.dead = true; P.hp = Math.min(P.maxHp, P.hp + P.maxHp*CFG.drops.medkitHeal);
       ring(P.x, P.y, 8, 70, .45, COL.cyan, true); burst(P.x, P.y - 10, '#FFFFFF', 14);
       banner('Аптечка', '+50% здоров’я'); sfx('select');
     }
@@ -1028,7 +1130,7 @@ function update(dt){
     h.life -= dt;
     const dx = P.x - h.x, dy = (P.y - h.y)*1.8;
     if (dx*dx + dy*dy < h.r*h.r) {
-      P.hp -= 9*dt;
+      P.hp -= CFG.hazard.poisonDps*dt;
       if (!h.fire){
         if (Math.random() < .3 && PT.length < 700) PT.push({ x:P.x + rand(-10, 10), y:P.y + rand(-4, 8), vx:rand(-8, 8), vy:rand(-50, -25), life:.5, max:.5, c:COL.toxic, s:rand(2, 3.5) });
         S.poisonT = (S.poisonT || 0) - dt;
@@ -1041,7 +1143,7 @@ function update(dt){
   if (S.mode === 'play' && S.pending > 0) openLevelUp();
 }
 function gainXp(v){
-  P.xp += (v + (S.bank || 0))*ST.xp*(S.pace > 1 ? QUICK_XP : 1); S.bank = 0;
+  P.xp += (v + (S.bank || 0))*ST.xp*(S.pace > 1 ? QUICK_XP : 1)*LAB.xp; S.bank = 0;
   sfx('pick');
   while (P.xp >= P.xpNext){ P.xp -= P.xpNext; P.level++; P.xpNext = xpNeeded(P.level); S.pending++; }
 }
@@ -1175,7 +1277,45 @@ function showScreen(id){
   if (id){ const b = document.querySelector('#' + id + ' button'); if (b && matchMedia('(hover:hover)').matches) b.focus({ preventScroll:true }); }
 }
 function resume(){ showScreen(null); S.mode = 'play'; last = performance.now(); resetMusic(); }
-function pause(){ if (S.mode !== 'play') return; S.mode = 'pause'; showScreen('s-pause'); }
+function pause(){ if (S.mode !== 'play') return; S.mode = 'pause'; renderPauseMult(); showScreen('s-pause'); }
+function renderPauseMult(){
+  const m = S.dir/60, sp$ = CFG.spawn, u = META.up;
+  const rate = (sp$.base + m*sp$.perMin + m*m*sp$.perMin2)*LAB.spawn;
+  const every = S.pace > 1 ? QUICK_BOSS_EVERY : BOSS_EVERY, next = S.nextBoss || every;
+  const rows = [
+    ['Здоров’я зомбі', `×${((1 + S.dir*CFG.enemyHpPerSec)*LAB.ehp).toFixed(2)}`],
+    ['Нові зомбі за секунду', rate.toFixed(1)],
+    ['Наступний бос', next < 890 ? `через ${fmt(Math.max(0, (next - S.dir)/S.pace))}` : 'лише титри'],
+    ['Здоров’я босів (лабораторія)', `×${LAB.bhp.toFixed(1)}`],
+    ['Досвід', `×${(ST.xp*(S.pace > 1 ? QUICK_XP : 1)*LAB.xp).toFixed(2)}`],
+    ['Шкода гравця', `×${ST.dmg.toFixed(2)}`],
+    ['Сила з прокату', `+${10*(u.hp || 0)} HP, +${6*(u.dmg || 0)}% шкоди`]
+  ];
+  $('#pause-sub').textContent = `Starlight Mall · ${S.pace > 1 ? 'швидкий показ' : 'повний сеанс'} · ${VERSION}`;
+  const box = $('#pause-mult'); box.innerHTML = '';
+  for (const [a, b] of rows){ const x = document.createElement('span'); x.textContent = a; const y = document.createElement('span'); y.textContent = b; box.append(x, y); }
+  if (labActive()){ const w = document.createElement('span'); w.className = 'warn'; w.textContent = '⚗ Лабораторія ввімкнена: монети й досягнення вимкнені'; box.append(w); }
+}
+const LAB_ROWS = [
+  ['ehp', 'Здоров’я зомбі', 'Множник до росту здоров’я звичайних зомбі'],
+  ['spawn', 'Щільність орди', 'Скільки зомбі з’являється щосекунди'],
+  ['bhp', 'Здоров’я босів', 'Королева, Менеджер, Олег Томінатор'],
+  ['xp', 'Досвід', 'Як швидко ростуть рівні']
+];
+let labFrom = 's-title';
+function renderLab(){
+  const box = $('#lab-list'); box.innerHTML = '';
+  for (const [k, name, hint] of LAB_ROWS){
+    const row = document.createElement('div'); row.className = 'lab';
+    row.innerHTML = `<label for="lab-${k}"><span></span><b></b></label><input type="range" id="lab-${k}" min="50" max="200" step="10"><small></small>`;
+    row.querySelector('span').textContent = name; row.querySelector('small').textContent = hint;
+    const inp = row.querySelector('input'), val = row.querySelector('b');
+    inp.value = Math.round(LAB[k]*100); val.textContent = inp.value + '%';
+    inp.addEventListener('input', () => { LAB[k] = inp.value/100; val.textContent = inp.value + '%'; saveLab(); });
+    box.appendChild(row);
+  }
+}
+function openLab(from){ labFrom = from; renderLab(); showScreen('s-lab'); }
 function useRewind(){
   if (S.mode !== 'play' || P.rewind < REW_MAX) return;
   P.rewind = 0; S.rew = .9; P.inv = 1;
@@ -1954,7 +2094,8 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; J = null; pause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden){ pause(); if (META) saveMeta(); } });
+window.addEventListener('pagehide', () => { if (META) saveMeta(); });
 
 $('#b-full').addEventListener('click', () => newGame(1));
 $('#b-quick').addEventListener('click', () => newGame(3));
@@ -1978,7 +2119,30 @@ $('#b-tapes').addEventListener('click', () => { renderTapes(); showScreen('s-tap
 $('#nowtape').addEventListener('click', () => { renderTapes(); showScreen('s-tapes'); });
 $('#b-ach').addEventListener('click', () => { renderAch(); showScreen('s-ach'); });
 document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', () => { renderHub(); showScreen('s-title'); }));
+$('#b-save').addEventListener('click', () => { $('#save-out').value = exportCode(); $('#save-in').value = ''; $('#save-msg').textContent = ''; $('#b-paste').dataset.arm = ''; $('#b-paste').textContent = 'Відновити з коду'; showScreen('s-save'); });
+$('#b-copy').addEventListener('click', async () => {
+  const t = $('#save-out'); let ok = false;
+  try { await navigator.clipboard.writeText(t.value); ok = true; } catch (e) { try { t.select(); ok = document.execCommand('copy'); } catch (e2) {} }
+  $('#save-msg').textContent = ok ? 'Код скопійовано. Збережи його в нотатках або надішли собі.' : 'Не вдалося скопіювати автоматично: виділи текст і скопіюй вручну.';
+});
+$('#b-paste').addEventListener('click', () => {
+  const b = $('#b-paste'), code = $('#save-in').value.trim();
+  if (!code){ $('#save-msg').textContent = 'Спершу встав код у поле вище.'; return; }
+  if (!b.dataset.arm){ b.dataset.arm = '1'; b.textContent = 'Точно замінити поточний прогрес?'; return; }
+  try { importCode(code); $('#save-out').value = exportCode(); $('#save-msg').textContent = 'Прогрес відновлено.'; renderHub(); }
+  catch (e) { $('#save-msg').textContent = e.message === 'checksum' ? 'Код пошкоджено: перевір, що скопійовано повністю.' : 'Це не схоже на код прогресу NEON DEAD.'; }
+  b.dataset.arm = ''; b.textContent = 'Відновити з коду';
+});
+$('#b-lab').addEventListener('click', () => openLab('s-title'));
+$('#b-lab2').addEventListener('click', () => openLab('s-pause'));
+$('#b-lab-reset').addEventListener('click', () => { LAB = Object.assign({}, LAB_DEF); saveLab(); renderLab(); });
+$('#b-lab-back').addEventListener('click', () => { if (labFrom === 's-pause'){ renderPauseMult(); showScreen('s-pause'); } else { renderHub(); showScreen('s-title'); } });
+$('#ver').textContent = VERSION;
 loadMeta(); renderHub();
+/* Test hook: only with ?debug or #debug in the address, nothing is exposed otherwise */
+if (/(^|[?&])debug/.test(location.search) || location.hash === '#debug'){
+  window.__dbg = { S:() => S, P:() => P, META:() => META, CFG, spawn:(t, o) => spawnEnemy(t, o || {}), boss:() => { if (S.dir !== undefined) S.nextBoss = Math.max(.001, S.dir); }, xp:n => gainXp(n) };
+}
 </script>
 </body>
 </html>
