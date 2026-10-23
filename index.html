@@ -342,6 +342,8 @@ const BOSS_SEQ = ['queen', 'tom', 'manager', 'queen', 'tom', 'manager', 'tom'];
 /* Quick show (5 min): fewer bosses, faster leveling */
 const QUICK_BOSS_EVERY = 240, BOSS_SEQ_QUICK = ['queen', 'manager', 'tom'];
 const QUICK_XP = 2.2, QUICK_BOSS_HP = .5;
+/* Full session boss HP: base × .58 × n^1.7 */
+const BOSS_HP_FULL = { queen:500, tom:560, manager:800 }, FULL_GROW_K = .58, FULL_GROW_POW = 1.7;
 const BOSS_HP = { queen:450, tom:560, manager:750 };
 const BOSS_GROW_K = .62, BOSS_GROW_POW = 1.35;
 const BOSS_LINE = { queen:'лишає слід палаючого лаку', tom:'прибув з майбутнього', manager:'вийшов на нічну зміну' };
@@ -567,7 +569,10 @@ function newGame(pace){
 }
 
 /* ---------- Helpers ---------- */
-function xpNeeded(L){ return Math.floor(5 + (L-1)*6 + Math.pow(L-1, 2.1)*.55); }
+function xpNeeded(L){
+  if (S.pace > 1) return Math.floor(5 + (L-1)*6 + Math.pow(L-1, 2.1)*.55);
+  return Math.floor(5 + (L-1)*5 + Math.pow(L-1, 1.5)*1.5);
+}
 function viewHalf(){ return { x:W/2/Z, y:H/2/Z }; }
 function spawnDist(){ const v = viewHalf(); return Math.hypot(v.x, v.y) + 40; }
 function h2(i, j){ let n = Math.imul(i, 374761393) + Math.imul(j, 668265263); n = Math.imul(n ^ (n >>> 13), 1274126177); n ^= n >>> 16; return (n >>> 0) / 4294967295; }
@@ -632,7 +637,7 @@ function director(dt){
     if (kind === 'queen') b = spawnEnemy('perm', { elite:true, r:30, name:'Королева хімзавивки', spd:58, queen:true, trailT:1 });
     else if (kind === 'tom') b = spawnEnemy('tom', { boss:true, tom:true, name:'Олег Томінатор', dashT:6, sumT:9, dashing:0, cartT:9999, laserT:3, lives:1 });
     else b = spawnEnemy('boss', { boss:true, name:'Менеджер молу', dashT:4, sumT:6, dashing:0, cartT:3 });
-    b.hp = b.maxHp = BOSS_HP[kind]*BOSS_GROW_K*Math.pow(S.dir/BOSS_EVERY, BOSS_GROW_POW)*(S.pace > 1 ? QUICK_BOSS_HP : 1);
+    b.hp = b.maxHp = S.pace > 1 ? BOSS_HP[kind]*BOSS_GROW_K*Math.pow(S.dir/BOSS_EVERY, BOSS_GROW_POW)*QUICK_BOSS_HP : BOSS_HP_FULL[kind]*FULL_GROW_K*Math.pow(S.bossN, FULL_GROW_POW);
     S.boss = b;
     banner(`Бос ${S.bossN}: ${b.name}`, BOSS_LINE[kind]); sfx('bossin');
   }
