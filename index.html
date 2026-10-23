@@ -339,6 +339,9 @@ const REW_MAX = 120;
 /* Boss schedule: every BOSS_EVERY seconds of film time, HP = base × K × n^POW (n = boss number) */
 const BOSS_EVERY = 120;
 const BOSS_SEQ = ['queen', 'tom', 'manager', 'queen', 'tom', 'manager', 'tom'];
+/* Quick show (5 min): fewer bosses, faster leveling */
+const QUICK_BOSS_EVERY = 240, BOSS_SEQ_QUICK = ['queen', 'manager', 'tom'];
+const QUICK_XP = 2.2, QUICK_BOSS_HP = .5;
 const BOSS_HP = { queen:450, tom:560, manager:750 };
 const BOSS_GROW_K = .62, BOSS_GROW_POW = 1.35;
 const BOSS_LINE = { queen:'лишає слід палаючого лаку', tom:'прибув з майбутнього', manager:'вийшов на нічну зміну' };
@@ -621,14 +624,15 @@ function director(dt){
   const cap = Math.min(260, 100 + m*12);
   while (S.spawnAcc >= 1){ S.spawnAcc -= 1; if (E.length < cap) spawnEnemy(chooseType(m)); }
   if (S.dir >= S.nextElite){ S.nextElite += 75; spawnEnemy(chooseType(m), { elite:true }); }
-  if (S.dir >= (S.nextBoss || BOSS_EVERY) && S.dir < 890){
-    S.bossN = (S.bossN || 0) + 1; S.nextBoss = (S.nextBoss || BOSS_EVERY) + BOSS_EVERY;
-    const kind = BOSS_SEQ[(S.bossN - 1) % BOSS_SEQ.length];
+  const every = S.pace > 1 ? QUICK_BOSS_EVERY : BOSS_EVERY, seq = S.pace > 1 ? BOSS_SEQ_QUICK : BOSS_SEQ;
+  if (S.dir >= (S.nextBoss || every) && S.dir < 890){
+    S.bossN = (S.bossN || 0) + 1; S.nextBoss = (S.nextBoss || every) + every;
+    const kind = seq[(S.bossN - 1) % seq.length];
     let b;
     if (kind === 'queen') b = spawnEnemy('perm', { elite:true, r:30, name:'Королева хімзавивки', spd:58, queen:true, trailT:1 });
     else if (kind === 'tom') b = spawnEnemy('tom', { boss:true, tom:true, name:'Олег Томінатор', dashT:6, sumT:9, dashing:0, cartT:9999, laserT:3, lives:1 });
     else b = spawnEnemy('boss', { boss:true, name:'Менеджер молу', dashT:4, sumT:6, dashing:0, cartT:3 });
-    b.hp = b.maxHp = BOSS_HP[kind]*BOSS_GROW_K*Math.pow(S.bossN, BOSS_GROW_POW)*(S.pace > 1 ? .75 : 1);
+    b.hp = b.maxHp = BOSS_HP[kind]*BOSS_GROW_K*Math.pow(S.dir/BOSS_EVERY, BOSS_GROW_POW)*(S.pace > 1 ? QUICK_BOSS_HP : 1);
     S.boss = b;
     banner(`Бос ${S.bossN}: ${b.name}`, BOSS_LINE[kind]); sfx('bossin');
   }
@@ -1032,7 +1036,7 @@ function update(dt){
   if (S.mode === 'play' && S.pending > 0) openLevelUp();
 }
 function gainXp(v){
-  P.xp += (v + (S.bank || 0))*ST.xp; S.bank = 0;
+  P.xp += (v + (S.bank || 0))*ST.xp*(S.pace > 1 ? QUICK_XP : 1); S.bank = 0;
   sfx('pick');
   while (P.xp >= P.xpNext){ P.xp -= P.xpNext; P.level++; P.xpNext = xpNeeded(P.level); S.pending++; }
 }
