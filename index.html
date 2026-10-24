@@ -167,7 +167,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .cass.sel .g::after{content:" ▶ грає";color:var(--c)}
 .cass .g{padding-top:6px}
 .earn{font:400 26px/1 var(--f-vhs);color:var(--gold);margin:2px 0 6px}
-.lvlside{position:absolute;right:8px;top:calc(env(safe-area-inset-top,0px) + 150px);width:min(48vw,196px);display:none;flex-direction:column;gap:6px;z-index:5}
+.lvlside{position:absolute;right:8px;top:calc(env(safe-area-inset-top,0px) + 150px);width:min(48vw,196px);display:none;flex-direction:column;gap:6px;z-index:5;touch-action:none;-webkit-touch-callout:none}
+.lvlside button{touch-action:none}
 .lvlside.on{display:flex;animation:lvlin .25s ease-out}
 .lvlside.hold{visibility:hidden}
 @keyframes lvlin{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
@@ -1612,8 +1613,8 @@ function openLevelUp(){
     b.querySelector('b').textContent = i.name;
     b.querySelector('small').textContent = i.desc;
     b.setAttribute('aria-label', `${idx + 1}. ${i.name}: ${i.desc}`);
-    b.addEventListener('pointerdown', ev => ev.stopPropagation());
-    b.addEventListener('click', () => pickSide(idx));
+    b.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); pickSide(idx); });
+    b.addEventListener('click', ev => { if (ev.detail === 0) pickSide(idx); });
     box.appendChild(b);
   });
   $('#lvl-h').textContent = S.pending > 1 ? `НОВИЙ РІВЕНЬ · ще ${S.pending - 1}` : 'НОВИЙ РІВЕНЬ';
@@ -2646,8 +2647,8 @@ $('#b-again').addEventListener('click', () => openHeroSelect(S.pace || 1));
 $('#b-again2').addEventListener('click', () => openHeroSelect(S.pace || 1));
 $('#b-revive').addEventListener('click', revive);
 $('#b-info').addEventListener('click', () => resume());
-$('#side-reroll').addEventListener('pointerdown', ev => ev.stopPropagation());
-$('#side-reroll').addEventListener('click', () => { if (P && P.rerolls > 0 && S.lvlOpen){ P.rerolls--; openLevelUp(); } });
+$('#side-reroll').addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); if (P && P.rerolls > 0 && S.lvlOpen){ P.rerolls--; openLevelUp(); } });
+$('#side-reroll').addEventListener('click', ev => { if (ev.detail === 0 && P && P.rerolls > 0 && S.lvlOpen){ P.rerolls--; openLevelUp(); } });
 $('#rew').addEventListener('click', useRewind);
 $('#reroll').addEventListener('click', () => { if (P.rerolls > 0){ P.rerolls--; openLevelUp(); } });
 $('#b-sound').addEventListener('click', () => {
