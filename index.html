@@ -167,6 +167,20 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .cass.sel .g::after{content:" ▶ грає";color:var(--c)}
 .cass .g{padding-top:6px}
 .earn{font:400 26px/1 var(--f-vhs);color:var(--gold);margin:2px 0 6px}
+.lvlside{position:absolute;right:8px;top:calc(env(safe-area-inset-top,0px) + 150px);width:min(48vw,196px);display:none;flex-direction:column;gap:6px;z-index:5}
+.lvlside.on{display:flex;animation:lvlin .25s ease-out}
+.lvlside.hold{visibility:hidden}
+@keyframes lvlin{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.lvlside.on{animation:none}}
+.lvlside .lh{font:400 18px/1 var(--f-vhs);color:#fff;text-shadow:2px 0 rgba(255,42,109,.75),-2px 0 rgba(5,217,232,.75);text-align:right;padding-right:2px}
+.scard{display:grid;grid-template-columns:34px 1fr;gap:7px;align-items:center;min-height:52px;padding:6px 8px 6px 6px;border-radius:8px;border:2px solid var(--c);background:rgba(13,2,33,.82);text-align:left;box-shadow:0 0 10px rgba(0,0,0,.4)}
+.scard .si{font-size:24px;line-height:1;text-align:center}
+.scard b{display:block;font:600 13px/1.15 var(--f-ui);color:#fff}
+.scard small{display:block;font:400 11px/1.2 var(--f-ui);color:var(--text-dim)}
+.scard em{display:block;font:400 13px/1 var(--f-vhs);font-style:normal;color:var(--c)}
+.scard:active{transform:scale(.97)}
+.sreroll{align-self:flex-end;background:rgba(13,2,33,.82);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:400 15px/1 var(--f-vhs);color:var(--cyan)}
+.sreroll[disabled]{display:none}
 .heroes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:left;margin:6px 0 10px}
 .hcard{position:relative;display:flex;flex-direction:column;border:2px solid var(--line);border-radius:8px;background:var(--card);padding:0;overflow:hidden;text-align:left}
 .hcard.sel{border-color:var(--mag);box-shadow:0 0 14px rgba(255,42,109,.6)}
@@ -225,6 +239,7 @@ textarea.code{display:block;width:100%;min-height:92px;margin:8px 0;padding:10px
 
   <div id="banner"><b id="bannert"></b><small id="banners"></small></div>
   <button id="rew" aria-label="Активна навичка"><span id="rew-i">◀◀</span><small id="rew-t">REWIND</small></button>
+  <div class="lvlside" id="lvlside" aria-live="polite"><div class="lh" id="lvl-h">НОВИЙ РІВЕНЬ</div><div id="side-cards" style="display:flex;flex-direction:column;gap:6px"></div><button class="sreroll" id="side-reroll">◀◀ інші</button></div>
 
   <section class="screen on" id="s-title">
     <div class="vhs-corner">PLAY ▶</div>
@@ -401,7 +416,7 @@ const COL = { mag:'#FF2A6D', cyan:'#05D9E8', purple:'#2B0F54', orange:'#FF6C11',
 const GEM = { 1:'#3FA9FF', 5:'#FF4FD8', 25:'#FFC23A' };
 
 /* ---------- CFG: all balance numbers in one place ---------- */
-const VERSION = 'v0.10.0';
+const VERSION = 'v0.10.1';
 const CFG = {
   player:{ hp:100, speed:150, rewindKills:120, hpPerUpgrade:10 },
   spawn:{ base:1.0, perMin:.8, perMin2:.02, capBase:100, capPerMin:12, capMax:260, eliteFirst:150, eliteEvery:75 },
@@ -464,7 +479,7 @@ const HEROES = {
               { name:'Гастролі', nodes:['hp', 'armor', 'regen', 'hp'], apex:'Друге дихання: раз за сеанс при 25% здоров’я лікує половину' },
               { name:'Мікстейп', nodes:['xp', 'mag', 'cd', 'xp'], apex:'На кожному 5-му рівні 5 касет на вибір' }],
     skills:[{ id:'rewind', name:'Перемотка', icon:'⏪', desc:'Відкидає орду, лікує 20%' }, { id:'loud', name:'Гучніше!', icon:'🔊', desc:'8 с подвійна площа атак' }, { id:'mixtape', name:'Мікстейп', icon:'📼', desc:'10 с випадкова зброя 8-го рівня' }] },
-  roman:{ name:'Роман', role:'Швидкий і слабкий', weapon:'yoyo', price:600, rule:'Перезарядка −30%, шкода −20%',
+  roman:{ name:'Роман', role:'Швидкий і прудкий', weapon:'yoyo', price:600, rule:'Перезарядка −30%, шкода −20%',
     branches:[{ name:'Темп', nodes:['cd', 'cd', 'spd', 'sig'], apex:'Йо-йо летить двічі' },
               { name:'Ролики', nodes:['spd', 'spd', 'armor', 'hp'], apex:'15% шанс ухилитися від шкоди' },
               { name:'Ритм', nodes:['dmg', 'area', 'mag', 'cd'], apex:'Слизька аура: зомбі поруч на 30% повільніші' }],
@@ -848,6 +863,7 @@ function stats(){
 
 function newGame(pace){
   S = { mode:'play', t:0, dir:0, pace, kills:0, spawnAcc:0, nextElite:CFG.spawn.eliteFirst, mini:false, bossSpawned:false, boss:null, pending:0, shake:0, rew:0, bannerT:0, run:freshRun(), unl:[], coinsRun:0, counted:false, achT:1 };
+  closeSide();
   const hid = META.hero, HD = HEROES[hid];
   S.buff = {};
   P = { x:0, y:0, r:12, hp:CFG.player.hp, maxHp:CFG.player.hp, speed:CFG.player.speed, face:1, dx:1, dy:0, inv:0, level:1, xp:0, xpNext:5, weapons:[{ id:HD.weapon, lvl:1, t:.4 }], pass:{}, rewind:0, revived:false, rerolls:1, walk:0, moving:false,
@@ -1508,7 +1524,7 @@ function update(dt){
     }
   }
   HZ = HZ.filter(h => h.life > 0);
-  if (S.mode === 'play' && S.pending > 0) openLevelUp();
+  if (S.mode === 'play' && S.pending > 0 && !S.lvlOpen) openLevelUp();
 }
 function gainXp(v){
   P.xp += (v + (S.bank || 0))*ST.xp*(S.pace > 1 ? QUICK_XP : 1)*LAB.xp; S.bank = 0;
@@ -1583,6 +1599,36 @@ function applyOpt(o){
   renderInv();
 }
 function openLevelUp(){
+  /* The game keeps running: cards slide in on the right and the player taps one */
+  S.lvlOpen = true;
+  const opts = buildOptions(), box = $('#side-cards');
+  S.sideOpts = opts; box.innerHTML = '';
+  opts.forEach((o, idx) => {
+    const i = optInfo(o), b = document.createElement('button');
+    b.className = 'scard'; b.style.setProperty('--c', i.c);
+    b.innerHTML = '<span class="si"></span><span><em></em><b></b><small></small></span>';
+    b.querySelector('.si').textContent = i.icon;
+    b.querySelector('em').textContent = i.tag;
+    b.querySelector('b').textContent = i.name;
+    b.querySelector('small').textContent = i.desc;
+    b.setAttribute('aria-label', `${idx + 1}. ${i.name}: ${i.desc}`);
+    b.addEventListener('pointerdown', ev => ev.stopPropagation());
+    b.addEventListener('click', () => pickSide(idx));
+    box.appendChild(b);
+  });
+  $('#lvl-h').textContent = S.pending > 1 ? `НОВИЙ РІВЕНЬ · ще ${S.pending - 1}` : 'НОВИЙ РІВЕНЬ';
+  const rr = $('#side-reroll');
+  rr.disabled = P.rerolls <= 0; rr.textContent = `◀◀ інші (${P.rerolls})`;
+  const el = $('#lvlside'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  sfx('level');
+}
+function pickSide(idx){
+  if (!S.lvlOpen || !S.sideOpts || !S.sideOpts[idx]) return;
+  applyOpt(S.sideOpts[idx]); S.pending--; sfx('select');
+  if (S.pending > 0) openLevelUp(); else closeSide();
+}
+function closeSide(){ if (S) S.lvlOpen = false; $('#lvlside').classList.remove('on'); }
+function openLevelUpOld(){
   S.mode = 'level';
   const opts = buildOptions(), box = $('#cards');
   box.innerHTML = '';
@@ -1597,7 +1643,7 @@ function openLevelUp(){
     if (i.pair) b.querySelector('.pair').textContent = i.pair;
     b.addEventListener('click', () => {
       applyOpt(o); S.pending--; sfx('select');
-      if (S.pending > 0) openLevelUp(); else resume();
+      if (S.pending > 0) openLevelUpOld(); else resume();
     });
     box.appendChild(b);
   });
@@ -1788,6 +1834,7 @@ function win(){
   showScreen('s-win');
 }
 function toMenu(){
+  closeSide();
   S = { mode:'title', t:0 }; P = null;
   $('#hud').classList.remove('on'); $('#rew').classList.remove('on');
   renderHub(); showScreen('s-title');
@@ -2535,6 +2582,7 @@ function render(){
 /* ---------- HUD ---------- */
 function updateHud(){
   if (!P) return;
+  $('#lvlside').classList.toggle('hold', S.mode !== 'play');
   $('#xpfill').style.width = (P.xp/P.xpNext*100).toFixed(1) + '%';
   $('#lvl').textContent = 'LV ' + P.level;
   $('#hpfill').style.width = (P.hp/P.maxHp*100).toFixed(1) + '%';
@@ -2571,6 +2619,7 @@ window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if (e.code === 'Escape' || e.code === 'KeyP'){ if (S.mode === 'play') pause(); else if (S.mode === 'pause') resume(); }
   if (e.code === 'Space'){ useRewind(); e.preventDefault(); }
+  if (S && S.lvlOpen && S.mode === 'play' && /^Digit[1-5]$/.test(e.code)) pickSide(+e.code.slice(5) - 1);
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; J = null; pause(); });
@@ -2596,7 +2645,9 @@ $('#b-menu3').addEventListener('click', toMenu);
 $('#b-again').addEventListener('click', () => openHeroSelect(S.pace || 1));
 $('#b-again2').addEventListener('click', () => openHeroSelect(S.pace || 1));
 $('#b-revive').addEventListener('click', revive);
-$('#b-info').addEventListener('click', () => { if (S.pending > 0){ S.mode = 'play'; openLevelUp(); } else resume(); });
+$('#b-info').addEventListener('click', () => resume());
+$('#side-reroll').addEventListener('pointerdown', ev => ev.stopPropagation());
+$('#side-reroll').addEventListener('click', () => { if (P && P.rerolls > 0 && S.lvlOpen){ P.rerolls--; openLevelUp(); } });
 $('#rew').addEventListener('click', useRewind);
 $('#reroll').addEventListener('click', () => { if (P.rerolls > 0){ P.rerolls--; openLevelUp(); } });
 $('#b-sound').addEventListener('click', () => {

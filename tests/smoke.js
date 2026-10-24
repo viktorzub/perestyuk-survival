@@ -42,7 +42,7 @@ for (const hero of ['mykola', 'roman', 'zub', 'kostya', 'gus', 'did']) for (cons
     newGame(3); let err = null;
     try {
       for (let i = 0; i < 60 * 120; i++) {
-        if (S.mode === 'level') { applyOpt(buildOptions()[0]); S.pending--; if (S.pending <= 0) S.mode = 'play'; }
+        if (S.lvlOpen) pickSide(0);
         if (S.mode === 'info') S.mode = 'play';
         const a = i / 60; keys.KeyD = Math.sin(a * .7) > 0; keys.KeyA = !keys.KeyD; keys.KeyW = Math.sin(a * .43) > 0; keys.KeyS = !keys.KeyW;
         if (S.mode === 'play') { update(1 / 60); updateFx(1 / 60); if (P.rewind >= REW_MAX) useRewind(); }
@@ -61,7 +61,7 @@ for (const pace of [3, 1]) {
     newGame(pace); let bosses = new Set(), err = null;
     try {
       for (let i = 0; i < 60 * (900 / pace + 5); i++) {
-        if (S.mode === 'level') { applyOpt(buildOptions()[0]); S.pending--; if (S.pending <= 0) S.mode = 'play'; }
+        if (S.lvlOpen) pickSide(0);
         if (S.mode === 'info') S.mode = 'play';
         if (S.mode === 'win') break;
         const a = i / 60; keys.KeyD = Math.sin(a * .7) > 0; keys.KeyA = !keys.KeyD; keys.KeyW = Math.sin(a * .43) > 0; keys.KeyS = !keys.KeyW;

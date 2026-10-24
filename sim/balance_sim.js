@@ -8,7 +8,7 @@ for (let r = 0; r < runs; r++) {
   eval(code + `
     newGame(mode); const seen = new Map(), lv = {};
     for (let i = 0; i < 60 * (900 / mode + 5); i++) {
-      if (S.mode === 'level') { applyOpt(buildOptions()[0]); S.pending--; if (S.pending <= 0) S.mode = 'play'; }
+      if (S.lvlOpen) pickSide(0);
       if (S.mode === 'info') S.mode = 'play';
       if (S.mode === 'dead') revive();
       if (S.mode === 'win') break;
