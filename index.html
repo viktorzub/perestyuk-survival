@@ -121,7 +121,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 @media (prefers-reduced-motion: reduce){#banner{transition:none}}
 .screen > .wrap{margin-block:auto}
 .btn[disabled]{opacity:.55;cursor:default}
-.hubrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.hubrow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
 .hubbtn{padding:10px 4px;border-radius:8px;border:2px solid var(--line);background:rgba(26,16,50,.85);font:500 15px/1.2 var(--f-ui)}
 .hubbtn span{display:block;font-size:22px;margin-bottom:4px}
 .coins{font:400 26px/1 var(--f-vhs);color:var(--gold);margin-top:16px}
@@ -234,6 +234,7 @@ textarea.code{display:block;width:100%;min-height:92px;margin:8px 0;padding:10px
       <button class="btn" id="b-full">Повний сеанс<small>15 хвилин до фінальних титрів</small></button>
       <button class="btn alt" id="b-quick">Швидкий показ<small>те саме за 5 хвилин</small></button>
       <div class="hubrow">
+        <button class="hubbtn" id="b-heroes"><span>🦸</span>Герої</button>
         <button class="hubbtn" id="b-shop"><span>🛒</span>Покращення</button>
         <button class="hubbtn" id="b-tapes"><span>🃏</span>Картки</button>
         <button class="hubbtn" id="b-ach"><span>🏆</span>Досягнення</button>
@@ -2576,6 +2577,7 @@ window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; J
 document.addEventListener('visibilitychange', () => { if (document.hidden){ pause(); if (META) saveMeta(); } });
 window.addEventListener('pagehide', () => { if (META) saveMeta(); });
 
+$('#b-heroes').addEventListener('click', () => openHeroSelect(1));
 $('#b-full').addEventListener('click', () => openHeroSelect(1));
 $('#b-quick').addEventListener('click', () => openHeroSelect(3));
 $('#b-hero-go').addEventListener('click', () => {
