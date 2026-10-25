@@ -9,4 +9,7 @@
 - `backups/` — попередні версії гри
 - `docs/decisions.md` — журнал рішень
 
-Запуск: `docker compose up -d --build`, гра на порту 8098.
+- `server.js` — сервер гри: роздає гру й зберігає акаунти та прогрес у `data/db.json`
+- `tests/server.test.js` — тести реєстрації, входу й прогресу: `node tests/server.test.js`
+
+Запуск: `docker compose up -d --build`, гра на порту 8098. База лежить у папці `data/` поруч із docker-compose і переживає перезбирання контейнера. Без Docker: `node server.js` (порт 3000).

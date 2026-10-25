@@ -1,5 +1,8 @@
-FROM nginx:alpine
+FROM node:22-alpine
 
-COPY index.html manifest.json icon-180.png icon-512.png /usr/share/nginx/html/
+WORKDIR /app
+COPY server.js index.html manifest.json icon-180.png icon-512.png ./
 
-EXPOSE 80
+ENV PORT=3000 DATA_DIR=/app/data
+EXPOSE 3000
+CMD ["node", "server.js"]

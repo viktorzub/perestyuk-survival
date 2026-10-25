@@ -210,6 +210,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .ver{position:absolute;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);font:400 18px/1 var(--f-vhs);color:rgba(244,236,255,.55)}
 .links{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:4px}
 .links .nowtape{margin:0}
+input.field{display:block;width:100%;margin:8px 0;padding:12px;border-radius:8px;border:1px solid var(--line);background:#0A0119;color:var(--text);font:400 17px/1.2 var(--f-ui);-webkit-user-select:text;user-select:text}
+input.field:focus{outline:2px solid var(--cyan);outline-offset:1px}
 textarea.code{display:block;width:100%;min-height:92px;margin:8px 0;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0A0119;color:var(--text);font:400 16px/1.25 var(--f-vhs);word-break:break-all;-webkit-user-select:text;user-select:text;resize:vertical}
 .mult{display:grid;grid-template-columns:1fr auto;gap:6px 12px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin:0 0 12px;font:400 15px/1.3 var(--f-ui)}
 .mult span:nth-child(even){font:400 19px/1.1 var(--f-vhs);color:var(--cyan);text-align:right}
@@ -257,7 +259,7 @@ textarea.code{display:block;width:100%;min-height:92px;margin:8px 0;padding:10px
       </div>
       <div class="coins" id="coins">0 монет</div>
       <button class="nowtape" id="nowtape"></button>
-      <div class="links"><button class="nowtape" id="b-save">💾 Код прогресу</button><button class="nowtape" id="b-lab">⚗ Лабораторія балансу</button></div>
+      <div class="links"><button class="nowtape" id="b-acc">👤 Акаунт</button><button class="nowtape" id="b-save">💾 Код прогресу</button><button class="nowtape" id="b-lab">⚗ Лабораторія балансу</button></div>
       <p class="hint">Тягни пальцем будь-де по екрану, щоб рухатися, або грай клавішами WASD. Зброя стріляє сама.</p>
       <div class="best" id="best"></div>
     </div>
@@ -313,6 +315,26 @@ textarea.code{display:block;width:100%;min-height:92px;margin:8px 0;padding:10px
       <div class="skills" id="tree-skills"></div>
       <button class="btn alt" id="b-tree-reset">Скинути дерево (безкоштовно)</button>
       <button class="btn alt" id="b-tree-back">Назад до героїв</button>
+    </div>
+  </section>
+
+  <section class="screen dim" id="s-acc">
+    <div class="wrap">
+      <h2 class="h2">Акаунт</h2>
+      <p class="sub" id="acc-sub"></p>
+      <div id="acc-out">
+        <input class="field" id="acc-user" placeholder="Ім’я гравця" autocomplete="username" autocapitalize="off" spellcheck="false" aria-label="Ім’я гравця">
+        <input class="field" id="acc-pass" type="password" placeholder="Пароль" autocomplete="current-password" aria-label="Пароль">
+        <button class="btn" id="b-login">Увійти</button>
+        <button class="btn alt" id="b-register">Зареєструватися</button>
+      </div>
+      <div id="acc-in">
+        <p class="tag" id="acc-who"></p>
+        <button class="btn alt" id="b-sync">Зберегти прогрес на сервер зараз</button>
+        <button class="btn alt" id="b-logout">Вийти з акаунта</button>
+      </div>
+      <p class="hint" id="acc-msg" role="status"></p>
+      <button class="btn alt" data-back>Назад до прокату</button>
     </div>
   </section>
 
@@ -417,7 +439,7 @@ const COL = { mag:'#FF2A6D', cyan:'#05D9E8', purple:'#2B0F54', orange:'#FF6C11',
 const GEM = { 1:'#3FA9FF', 5:'#FF4FD8', 25:'#FFC23A' };
 
 /* ---------- CFG: all balance numbers in one place ---------- */
-const VERSION = 'v0.10.1';
+const VERSION = 'v0.11.0';
 const CFG = {
   player:{ hp:100, speed:150, rewindKills:120, hpPerUpgrade:10 },
   spawn:{ base:1.0, perMin:.8, perMin2:.02, capBase:100, capPerMin:12, capMax:260, eliteFirst:150, eliteEvery:75 },
@@ -650,7 +672,57 @@ function loadMeta(){
   try { const b = JSON.parse(localStorage.getItem('neondead-best') || '{}'); if (b.kills && !META.st.bestKills) META.st.bestKills = b.kills; } catch (e) {}
   saveMeta();
 }
-function saveMeta(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(META)); } catch (e) {} }
+function saveMeta(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(META)); } catch (e) {}
+  if (typeof AUTH !== 'undefined' && AUTH && apiOk){ clearTimeout(syncT); syncT = setTimeout(pushProgress, 1500); }
+}
+/* ---------- Account: registration and server-side progress (only on the game server with server.js) ---------- */
+const AUTH_KEY = 'neondead-auth-v1';
+let AUTH = null, apiOk = false, syncT = 0, syncState = '';
+try { AUTH = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) {}
+function saveAuth(){ try { if (AUTH) localStorage.setItem(AUTH_KEY, JSON.stringify(AUTH)); else localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+async function api(path, method, bodyObj){
+  const h = { 'Content-Type':'application/json' };
+  if (AUTH) h.Authorization = 'Bearer ' + AUTH.token;
+  const r = await fetch(new URL('api/' + path, location.href).href, { method:method || 'GET', headers:h, body:bodyObj ? JSON.stringify(bodyObj) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok){ const e = new Error(j.error || 'Сервер відповів ' + r.status); e.status = r.status; throw e; }
+  return j;
+}
+async function pushProgress(){
+  if (!AUTH || !apiOk) return;
+  try { await api('progress', 'PUT', { profile:META }); syncState = 'збережено на сервері'; }
+  catch (e) { syncState = 'не вдалося зберегти на сервері'; if (e.status === 401){ AUTH = null; saveAuth(); } }
+}
+async function apiInit(){
+  try { const r = await Promise.race([api('ping'), new Promise((ok, bad) => setTimeout(() => bad(new Error('timeout')), 3000))]); apiOk = !!(r && r.ok); }
+  catch (e) { apiOk = false; }
+  if (apiOk && AUTH){
+    try { const j = await api('progress'); if (j.profile){ META = normalize(j.profile); try { localStorage.setItem(SAVE_KEY, JSON.stringify(META)); } catch (e) {} } else await pushProgress(); syncState = 'синхронізовано'; }
+    catch (e) { if (e.status === 401){ AUTH = null; saveAuth(); } syncState = 'не вдалося синхронізувати'; }
+  }
+  if (S.mode === 'title') renderHub();
+}
+function renderAcc(msg){
+  const out = $('#acc-out'), inn = $('#acc-in');
+  if (!apiOk){ $('#acc-sub').textContent = 'Акаунти працюють лише на сервері гри. Тут прогрес зберігається в браузері, переносити його можна кодом прогресу.'; out.style.display = 'none'; inn.style.display = 'none'; }
+  else if (AUTH){ $('#acc-sub').textContent = 'Прогрес автоматично зберігається на сервері після кожної зміни.'; out.style.display = 'none'; inn.style.display = 'block'; $('#acc-who').textContent = `Ти увійшов як ${AUTH.username}` + (syncState ? ` · ${syncState}` : ''); }
+  else { $('#acc-sub').textContent = 'Увійди або зареєструйся, щоб прогрес зберігався на сервері й був однаковим на всіх пристроях.'; out.style.display = 'block'; inn.style.display = 'none'; }
+  $('#acc-msg').textContent = msg || '';
+}
+async function doAuth(kind){
+  const username = $('#acc-user').value.trim(), password = $('#acc-pass').value;
+  if (!username || !password){ renderAcc('Введи ім’я та пароль.'); return; }
+  renderAcc(kind === 'login' ? 'Входимо…' : 'Реєструємо…');
+  try {
+    const j = await api(kind, 'POST', { username, password });
+    AUTH = { token:j.token, username:j.username }; saveAuth(); $('#acc-pass').value = '';
+    let note;
+    if (j.profile){ META = normalize(j.profile); try { localStorage.setItem(SAVE_KEY, JSON.stringify(META)); } catch (e) {} note = 'Прогрес завантажено з акаунта.'; }
+    else { await pushProgress(); note = 'Поточний прогрес збережено в акаунт.'; }
+    syncState = 'синхронізовано'; renderAcc(note); renderHub();
+  } catch (e) { renderAcc(e.message || 'Не вдалося зв’язатися із сервером.'); }
+}
 function hash32(str){ let h = 0x811c9dc5; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16).padStart(8, '0'); }
 function exportCode(){ const j = JSON.stringify(META); return `ND${SAVE_SCHEMA}.${btoa(unescape(encodeURIComponent(j)))}.${hash32(j)}`; }
 function importCode(code){
@@ -790,6 +862,7 @@ function renderHub(){
   $('#nowtape b').textContent = `${t.artist} — ${t.album}`;
   const st = META.st;
   $('#best').textContent = st.bestKills ? `Рекорд: ${st.bestKills} зомбі, ${fmt(st.bestT || 0)} фільму` : '';
+  $('#b-acc').textContent = AUTH ? `👤 ${AUTH.username}` : '👤 Акаунт';
 }
 function renderShop(){
   $('#shop-coins').textContent = `У тебе ${META.coins} монет`;
@@ -2617,6 +2690,7 @@ cv.addEventListener('pointermove', e => { if (J && e.pointerId === J.id){ J.x = 
 const endJ = e => { if (J && e.pointerId === J.id) J = null; };
 cv.addEventListener('pointerup', endJ); cv.addEventListener('pointercancel', endJ);
 window.addEventListener('keydown', e => {
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   keys[e.code] = true;
   if (e.code === 'Escape' || e.code === 'KeyP'){ if (S.mode === 'play') pause(); else if (S.mode === 'pause') resume(); }
   if (e.code === 'Space'){ useRewind(); e.preventDefault(); }
@@ -2679,7 +2753,14 @@ $('#b-lab2').addEventListener('click', () => openLab('s-pause'));
 $('#b-lab-reset').addEventListener('click', () => { LAB = Object.assign({}, LAB_DEF); saveLab(); renderLab(); });
 $('#b-lab-back').addEventListener('click', () => { if (labFrom === 's-pause'){ renderPauseMult(); showScreen('s-pause'); } else { renderHub(); showScreen('s-title'); } });
 $('#ver').textContent = VERSION;
+$('#b-acc').addEventListener('click', () => { renderAcc(); showScreen('s-acc'); });
+$('#b-login').addEventListener('click', () => doAuth('login'));
+$('#b-register').addEventListener('click', () => doAuth('register'));
+$('#acc-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doAuth('login'); });
+$('#b-sync').addEventListener('click', async () => { renderAcc('Зберігаю…'); await pushProgress(); renderAcc(syncState); });
+$('#b-logout').addEventListener('click', async () => { try { await api('logout', 'POST'); } catch (e) {} AUTH = null; saveAuth(); syncState = ''; renderAcc('Ти вийшов. Прогрес лишився в цьому браузері.'); renderHub(); });
 loadMeta(); renderHub();
+apiInit();
 /* Test hook: only with ?debug or #debug in the address, nothing is exposed otherwise */
 if (/(^|[?&])debug/.test(location.search) || location.hash === '#debug'){
   window.__dbg = { S:() => S, P:() => P, META:() => META, CFG, spawn:(t, o) => spawnEnemy(t, o || {}), boss:() => { if (S.dir !== undefined) S.nextBoss = Math.max(.001, S.dir); }, xp:n => gainXp(n) };
