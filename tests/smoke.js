@@ -24,7 +24,7 @@ const check = (ok, msg) => { console.log((ok ? 'PASS ' : 'FAIL ') + msg); if (!o
   const v09 = fs.readFileSync(path.join(__dirname, 'fixtures', 'v09-save.json'), 'utf8');
   const { code } = load({ 'neondead-profile-v1': v09 });
   eval(code + `
-    check(META.schema === 3, 'v0.9 save: migrated to schema 3');
+    check(META.schema === SAVE_SCHEMA && META.level === 'mall', 'v0.9 save: migrated to the current schema, mall selected');
     check(META.coins === 1234 && META.up.dmg === 2 && META.st.kills === 4200, 'v0.9 save: coins, upgrades and stats kept');
     check(META.heroes && META.heroes.mykola.u === true && META.heroes.did.u === false, 'v0.9 save: Mykola unlocked, others locked');
     check(META.hero === 'mykola' && META.heroes.zub.nodes.join() === '0,0,0', 'v0.9 save: hero selected, empty trees');
@@ -51,6 +51,29 @@ for (const hero of ['mykola', 'roman', 'zub', 'kostya', 'gus', 'did']) for (cons
       }
     } catch (e) { err = e; }
     check(!err, hero + ' / skill ' + sk + ': 2 minutes without runtime errors' + (err ? ' (' + err.message + ')' : ''));
+  `);
+}
+
+// 1d. School level: doors, rooms and the King of Prom work to the end of a quick session
+{
+  const { code } = load();
+  eval(code + `
+    META.ach.t5 = true; META.level = 'school'; newGame(3); let err = null, kings = 0, closed = 0;
+    try {
+      for (let i = 0; i < 60 * 305; i++) {
+        if (S.lvlOpen) pickSide(0);
+        if (S.mode === 'info') S.mode = 'play';
+        if (S.mode === 'win') break;
+        const a = i / 60; keys.KeyD = Math.sin(a * .7) > 0; keys.KeyA = !keys.KeyD; keys.KeyW = Math.sin(a * .43) > 0; keys.KeyS = !keys.KeyW;
+        if (S.mode === 'play') { update(1 / 60); updateFx(1 / 60); }
+        if (i % 60 === 0) { render(); kings = Math.max(kings, E.filter(e => e.king).length); closed += chunk(0, 0).obs.filter(o => o.k === 'door' && doorClosed(o)).length; }
+        P.hp = Math.max(P.hp, P.maxHp * .5);
+      }
+    } catch (e) { err = e; }
+    check(!err && S.level === 'school', 'school: quick session without runtime errors' + (err ? ' (' + err.message + ')' : ''));
+    check(S.mode === 'win', 'school: reaches the final credits');
+    check(kings >= 2, 'school: the King of Prom splits');
+    check(closed > 0, 'school: doors close and open');
   `);
 }
 
